@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AI Strategist Task List</title>
+<link rel="icon" type="image/png" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
 <script>
 try { var mvTheme = localStorage.getItem('mv-ai-strategist-theme'); if (mvTheme === 'light' || mvTheme === 'dark') document.documentElement.setAttribute('data-theme', mvTheme); } catch (e) {}
 </script>
@@ -860,10 +862,27 @@ details[open] > summary .chev{transform:rotate(90deg)}
     markBackedUp();
     setStatus('Backup ready to copy below.');
   }
+  // Outside claude.ai (for example, a copy hosted from a repo), a normal browser download works.
+  function blobDownload() {
+    try {
+      var blob = new Blob([backupData()], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = backupFilename();
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      markBackedUp();
+      setStatus('Backup saved ' + fmtFull.format(new Date()) + '.');
+      return true;
+    } catch (e) { return false; }
+  }
   function saveBackup() {
     setStatus('Preparing backup…');
     downloadsP.then(function (dl) {
-      if (!dl) { showBackupPanel(); return; }
+      if (!dl) { if (!window.claude && blobDownload()) return; showBackupPanel(); return; }
       return dl.save({ filename: backupFilename(), data: backupData() }).then(function () {
         markBackedUp();
         setStatus('Backup saved ' + fmtFull.format(new Date()) + '.');
